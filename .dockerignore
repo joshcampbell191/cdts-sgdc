@@ -1,6 +1,9 @@
 # Node JS
 node_modules
 
+# Bower
+bower_components
+
 # Git
 .git
 .gitignore

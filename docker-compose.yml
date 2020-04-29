@@ -9,6 +9,8 @@ services:
       - "8000:8000"
     volumes:
       - .:/home/node/app
+      - bower_components:/home/node/app/bower_components
       - node_modules:/home/node/app/node_modules
 volumes:
+  bower_components:
   node_modules:

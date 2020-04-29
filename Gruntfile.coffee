@@ -16,13 +16,20 @@ module.exports = (grunt) ->
 	@registerTask(
 		"build"
 		"Run full build."
-		[
-			"clean"
-			"soycompile"
-			"concat"
-			"copy-dist"
-			"clean:tmp"
-		]
+		->
+			pkg = grunt.file.readJSON("node_modules/gcweb-opc/package.json");
+			gcwebOpcVersion = pkg.version.split(".").join("_");
+			globalsPath = "_src/soy/globals.txt";
+
+			grunt.file.write(globalsPath, "GCWEB_OPC_VERSION = 'v#{gcwebOpcVersion}'", { encoding: "utf8"});
+
+			grunt.task.run [
+				"clean"
+				"soycompile"
+				"concat"
+				"copy-dist"
+				"clean:tmp"
+			];
 	)
 
 	@registerTask(
@@ -105,6 +112,7 @@ module.exports = (grunt) ->
 		coreTmp: "tmp"
 		banner: "/*!\n * Centrally Deployed Templates Solution (CDTS) / Solution de gabarits à déploiement centralisé (SGDC)\n * github.com/wet-boew/cdts-sgdc/blob/master/LICENSE\n" +
 				" * v<%= pkg.version %> - " + "<%= grunt.template.today('yyyy-mm-dd') %>\n *\n */"
+		globalsPath: "./_src/soy/globals.txt"
 
 		# Commit Messages
 		commitMessage: " Commit wet-boew/cdts-sgdc#" + process.env.TRAVIS_COMMIT
@@ -159,6 +167,41 @@ module.exports = (grunt) ->
 				options:
 					jarPath: "_src/jar"
 
+			gcwebopcEn:
+				expand: true,
+				src: [
+					"./_src/soy/gcweb-opc/en/wet-en.soy"
+					"./_src/soy/gcweb-opc/en/appPage-en.soy"
+					]
+				dest: "<%= coreTmp %>"
+				options:
+					jarPath: "_src/jar"
+					compileflags:
+						compileTimeGlobalsFile: "<%= globalsPath %>"
+
+			gcwebopcFr:
+				expand: true,
+				src: [
+					"./_src/soy/gcweb-opc/fr/wet-fr.soy"
+					"./_src/soy/gcweb-opc/fr/appPage-fr.soy"
+					]
+				dest: "<%= coreTmp %>"
+				options:
+					jarPath: "_src/jar"
+					compileflags:
+						compileTimeGlobalsFile: "<%= globalsPath %>"
+
+			gcwebopcBi:
+				expand: true,
+				src: [
+					"./_src/soy/gcweb-opc/bilingual/serverPage.soy"
+					]
+				dest: "<%= coreTmp %>"
+				options:
+					jarPath: "_src/jar"
+					compileflags:
+						compileTimeGlobalsFile: "<%= globalsPath %>"
+
 			gcintranetEn:
 				expand: true,
 				src: [
@@ -209,6 +252,26 @@ module.exports = (grunt) ->
 					"<%= coreTmp %>/_src/soy/gcweb/bilingual/gcweb-serverPage.js"
 				]
 				dest: "<%= coreDist %>/gcweb-fr.js"
+
+			gcwebopcEn:
+				options:
+					stripBanners: false
+				src: [
+					"<%= coreTmp %>/_src/soy/gcweb-opc/en/wet-en.js"
+					"<%= coreTmp %>/_src/soy/gcweb-opc/en/appPage-en.js"
+					"<%= coreTmp %>/_src/soy/gcweb-opc/bilingual/serverPage.js"
+				]
+				dest: "<%= coreDist %>/gcweb-opc/wet-en.js"
+
+			gcwebopcFr:
+				options:
+					stripBanners: false
+				src: [
+					"<%= coreTmp %>/_src/soy/gcweb-opc/fr/wet-fr.js"
+					"<%= coreTmp %>/_src/soy/gcweb-opc/fr/appPage-fr.js"
+					"<%= coreTmp %>/_src/soy/gcweb-opc/bilingual/serverPage.js"
+				]
+				dest: "<%= coreDist %>/gcweb-opc/wet-fr.js"
 
 			gcintranetEn:
 				options:
@@ -371,6 +434,41 @@ module.exports = (grunt) ->
 					"uglify"
 					"clean:tmp"
 				]
+			gcwebopcEn:
+				files: [
+					"_src/soy/gcweb-opc/en/*.*"
+				]
+				tasks: [
+					"soycompile:gcwebopcEn"
+					"soycompile:gcwebopcBi"
+					"concat:gcwebopcEn"
+					"uglify"
+					"clean:tmp"
+				]
+			gcwebopcFr:
+				files: [
+					"_src/soy/gcweb-opc/fr/*.*"
+				]
+				tasks: [
+					"soycompile:gcwebopcFr"
+					"soycompile:gcwebopcBi"
+					"concat:gcwebopcFr"
+					"uglify"
+					"clean:tmp"
+				]
+			gcwebopcBi:
+				files: [
+					"_src/soy/gcweb-opc/bilingual/*.*"
+				]
+				tasks: [
+					"soycompile:gcwebopcEn"
+					"soycompile:gcwebopcFr"
+					"soycompile:gcwebopcBi"
+					"concat:gcwebopcEn"
+					"concat:gcwebopcFr"
+					"uglify"
+					"clean:tmp"
+				]
 			assets:
 				files: [
 					"_src/ajax/**/*.*"
@@ -404,6 +502,16 @@ module.exports = (grunt) ->
 					dest: "<%= coreDist %>/cdts/"
 					expand: true
 				,
+					cwd: "_src"
+					src: [
+						"ajax/**/*.*"
+						"css/**/*.*"
+						"js/**/*.*"
+						"!js/soyutils.js"
+					]
+					dest: "<%= coreDist %>/gcweb-opc/cdts/"
+					expand: true
+				,
 					cwd: "_src/js"
 					src: [
 						"soyutils.js"
@@ -422,8 +530,16 @@ module.exports = (grunt) ->
 					src: [
 						"wet-boew/**/*.*"
 						"gcweb/**/*.*"
+						"gcweb-opc/**/*.*"
 					]
 					dest: "<%= coreDist %>/"
+					expand: true
+				,
+					cwd: "bower_components"
+					src: [
+						"wet-boew/**/*.*"
+					]
+					dest: "<%= coreDist %>/gcweb-opc/"
 					expand: true
 				]
 

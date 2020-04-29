@@ -1,0 +1,6 @@
+{
+  "name": "cdts-sgdc",
+  "dependencies": {
+    "wet-boew": "https://github.com/wet-boew/wet-boew-cdn.git#v4.0.26"
+  }
+}
